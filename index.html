@@ -9,6 +9,8 @@
       font-family: Arial, sans-serif;
       margin: 2rem;
       background-color: #f9f9f9;
+      max-width: 100%;
+      box-sizing: border-box;
     }
     h1 {
       color: #333;
@@ -17,12 +19,14 @@
       padding: 0.5rem;
       margin: 0.5rem 0;
       width: 100%;
+      box-sizing: border-box;
     }
     .result {
       background-color: #fff;
       padding: 1rem;
       margin-top: 1rem;
       border: 1px solid #ddd;
+      overflow-wrap: break-word;
     }
     #priceControl {
       margin-top: 1rem;
@@ -33,6 +37,7 @@
       background: #eee;
       border: 1px solid #ccc;
       margin-top: 10px;
+      box-sizing: border-box;
     }
     .bar {
       height: 100%;
@@ -40,15 +45,30 @@
       text-align: right;
       color: white;
       padding-right: 5px;
+      white-space: nowrap;
     }
     .explanation {
       background: #fff;
       border: 1px solid #ccc;
       padding: 1rem;
       margin-top: 2rem;
+      overflow-wrap: break-word;
     }
     .explanation h2 {
       margin-top: 0;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    @media (max-width: 600px) {
+      body {
+        margin: 1rem;
+      }
+      .bar {
+        font-size: 12px;
+        padding-right: 2px;
+      }
     }
   </style>
 </head>
@@ -139,6 +159,7 @@ TP = Entry Price - (Risk * RRR)  (for shorts)</pre>
       <li><strong>Target RRR</strong>: 1:2 → TP = $26,000</li>
     </ul>
 
+    <p><em>Would you like a TP calculator feature added to your simulator that shows TP based on entry, risk, and RRR?</em></p>
   </div>
 
   <script>
@@ -184,7 +205,6 @@ TP = Entry Price - (Risk * RRR)  (for shorts)</pre>
 
       const barWidth = Math.max(0, Math.min(100, (equity - maintenanceMargin) / (walletBalance - maintenanceMargin) * 100));
 
-      // Take Profit Calculation
       let riskPerTrade = Math.abs(entryPrice - stopLoss);
       let tp;
       if (side === 'long') {
