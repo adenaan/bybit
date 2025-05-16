@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bybit Liquidation Simulator By Addie</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      background-color: #f9f9f9;
+    }
+    h1 {
+      color: #333;
+    }
+    input, select, button {
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      width: 100%;
+    }
+    .result {
+      background-color: #fff;
+      padding: 1rem;
+      margin-top: 1rem;
+      border: 1px solid #ddd;
+    }
+    #priceControl {
+      margin-top: 1rem;
+    }
+    .bar-container {
+      height: 20px;
+      width: 100%;
+      background: #eee;
+      border: 1px solid #ccc;
+      margin-top: 10px;
+    }
+    .bar {
+      height: 100%;
+      background: #4caf50;
+      text-align: right;
+      color: white;
+      padding-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bybit Liquidation Simulator By Addie</h1>
+
+  <label for="entryPrice">Entry Price ($):</label>
+  <input type="number" id="entryPrice" value="60000" />
+
+  <label for="leverage">Leverage (e.g. 10, 50, 100):</label>
+  <input type="number" id="leverage" value="50" />
+
+  <label for="positionSize">Position Size ($):</label>
+  <input type="number" id="positionSize" value="50000" />
+
+  <label for="walletBalance">Wallet Balance ($):</label>
+  <input type="number" id="walletBalance" value="1000" />
+
+  <label for="side">Position Type:</label>
+  <select id="side">
+    <option value="long">Long</option>
+    <option value="short">Short</option>
+  </select>
+
+  <div id="priceControl">
+    <label for="currentPriceSlider">Current Price ($):</label>
+    <input type="range" id="currentPriceSlider" min="10000" max="100000" value="60000" step="10" oninput="updateCurrentPrice(this.value)" />
+    <input type="number" id="currentPriceInput" value="60000" oninput="updateSlider(this.value)" />
+  </div>
+
+  <button onclick="simulate()">Simulate</button>
+
+  <div class="result" id="result"></div>
+
+  <div class="bar-container">
+    <div class="bar" id="riskBar" style="width: 100%">100%</div>
+  </div>
+
+  <script>
+    function updateCurrentPrice(value) {
+      document.getElementById('currentPriceInput').value = value;
+      simulate();
+    }
+
+    function updateSlider(value) {
+      document.getElementById('currentPriceSlider').value = value;
+      simulate();
+    }
+
+    function simulate() {
+      const entryPrice = parseFloat(document.getElementById('entryPrice').value);
+      const leverage = parseFloat(document.getElementById('leverage').value);
+      const positionSize = parseFloat(document.getElementById('positionSize').value);
+      const walletBalance = parseFloat(document.getElementById('walletBalance').value);
+      const side = document.getElementById('side').value;
+      const currentPrice = parseFloat(document.getElementById('currentPriceInput').value);
+      const mmr = 0.005; // Maintenance Margin Rate (0.5%)
+
+      const marginUsed = positionSize / leverage;
+      const availableBalance = walletBalance - marginUsed;
+      const maintenanceMargin = positionSize * mmr;
+
+      let liquidationPrice;
+      let unrealizedPnL;
+      let pnlPct;
+
+      if (side === 'long') {
+        liquidationPrice = entryPrice * (1 - (1 / leverage) + mmr);
+        unrealizedPnL = ((currentPrice - entryPrice) / entryPrice) * positionSize;
+      } else {
+        liquidationPrice = entryPrice * (1 + (1 / leverage) - mmr);
+        unrealizedPnL = ((entryPrice - currentPrice) / entryPrice) * positionSize;
+      }
+
+      const equity = walletBalance + unrealizedPnL;
+      pnlPct = (unrealizedPnL / marginUsed) * 100;
+
+      const barWidth = Math.max(0, Math.min(100, (equity - maintenanceMargin) / (walletBalance - maintenanceMargin) * 100));
+      const resultDiv = document.getElementById('result');
+
+      resultDiv.innerHTML = `
+        <strong>Margin Used:</strong> $${marginUsed.toFixed(2)}<br />
+        <strong>Available Balance:</strong> $${availableBalance.toFixed(2)}<br />
+        <strong>Estimated Liquidation Price:</strong> $${liquidationPrice.toFixed(2)}<br />
+        <strong>Maintenance Margin:</strong> $${maintenanceMargin.toFixed(2)}<br />
+        <strong>Current Price:</strong> $${currentPrice.toFixed(2)}<br />
+        <strong>Unrealized PnL:</strong> $${unrealizedPnL.toFixed(2)} (${pnlPct.toFixed(2)}%)<br />
+        <strong>Total Equity:</strong> $${equity.toFixed(2)}<br />
+        <hr>
+        <em>Trade continues even if available balance is $0 — as long as equity stays above maintenance margin.</em>
+      `;
+
+      const bar = document.getElementById('riskBar');
+      bar.style.width = `${barWidth}%`;
+      bar.textContent = `${Math.round(barWidth)}%`;
+      bar.style.backgroundColor = barWidth > 60 ? '#4caf50' : barWidth > 30 ? '#ff9800' : '#f44336';
+    }
+
+    simulate();
+  </script>
+</body>
+</html>
