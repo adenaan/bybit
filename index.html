@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bybit Liquidation Simulator By Addie</title>
+  <title>Bybit Liquidation Simulator</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -44,7 +44,7 @@
   </style>
 </head>
 <body>
-  <h1>Bybit Liquidation Simulator By Addie</h1>
+  <h1>Bybit Liquidation Simulator</h1>
 
   <label for="entryPrice">Entry Price ($):</label>
   <input type="number" id="entryPrice" value="60000" />
@@ -63,6 +63,12 @@
     <option value="long">Long</option>
     <option value="short">Short</option>
   </select>
+
+  <label for="riskReward">Risk-Reward Ratio (e.g. 2 = 1:2):</label>
+  <input type="number" id="riskReward" value="2" step="0.1" />
+
+  <label for="stopLoss">Stop Loss Price ($):</label>
+  <input type="number" id="stopLoss" value="59000" />
 
   <div id="priceControl">
     <label for="currentPriceSlider">Current Price ($):</label>
@@ -96,6 +102,8 @@
       const walletBalance = parseFloat(document.getElementById('walletBalance').value);
       const side = document.getElementById('side').value;
       const currentPrice = parseFloat(document.getElementById('currentPriceInput').value);
+      const riskReward = parseFloat(document.getElementById('riskReward').value);
+      const stopLoss = parseFloat(document.getElementById('stopLoss').value);
       const mmr = 0.005; // Maintenance Margin Rate (0.5%)
 
       const marginUsed = positionSize / leverage;
@@ -118,8 +126,17 @@
       pnlPct = (unrealizedPnL / marginUsed) * 100;
 
       const barWidth = Math.max(0, Math.min(100, (equity - maintenanceMargin) / (walletBalance - maintenanceMargin) * 100));
-      const resultDiv = document.getElementById('result');
 
+      // Take Profit Calculation
+      let riskPerTrade = Math.abs(entryPrice - stopLoss);
+      let tp;
+      if (side === 'long') {
+        tp = entryPrice + (riskPerTrade * riskReward);
+      } else {
+        tp = entryPrice - (riskPerTrade * riskReward);
+      }
+
+      const resultDiv = document.getElementById('result');
       resultDiv.innerHTML = `
         <strong>Margin Used:</strong> $${marginUsed.toFixed(2)}<br />
         <strong>Available Balance:</strong> $${availableBalance.toFixed(2)}<br />
@@ -128,6 +145,7 @@
         <strong>Current Price:</strong> $${currentPrice.toFixed(2)}<br />
         <strong>Unrealized PnL:</strong> $${unrealizedPnL.toFixed(2)} (${pnlPct.toFixed(2)}%)<br />
         <strong>Total Equity:</strong> $${equity.toFixed(2)}<br />
+        <strong>Target Take Profit Price:</strong> $${tp.toFixed(2)} (RR ${riskReward})<br />
         <hr>
         <em>Trade continues even if available balance is $0 — as long as equity stays above maintenance margin.</em>
       `;
